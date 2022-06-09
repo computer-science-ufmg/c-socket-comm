@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 
 #define PORT 51511
+#define BUFFSIZE 500
 
 typedef enum addr_type {
   ADDR_TYPE_IPV4,
@@ -20,3 +21,5 @@ typedef int socket_t;
 
 addr_type_t get_addr_type(char const* name);
 int get_port(char const* port);
+int read_message(char* buff, int size);
+void terminate_command_string(char* command);

@@ -13,10 +13,10 @@ $(BUILD_PATH)/%.o: %.c %.h
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 $(SERVER_TARGET_NAME): ./server.c $(BUILD_PATH)/common.o
-	$(CC) $(CFLAGS) -o $(TARGET_NAME) ./server.c $(BUILD_PATH)/common.o
+	$(CC) ./server.c $(BUILD_PATH)/common.o -o $(SERVER_TARGET_NAME)
 
 $(CLIENT_TARGET_NAME): ./client.c $(BUILD_PATH)/common.o
-	$(CC) $(CFLAGS) -o $(TARGET_NAME) ./client.c $(BUILD_PATH)/common.o
+	$(CC) ./client.c $(BUILD_PATH)/common.o -o $(CLIENT_TARGET_NAME)
 
 clean:
 	rm -rf $(BUILD_PATH)/*

@@ -17,3 +17,23 @@ int get_port(char const* port) {
   }
   return p;
 }
+
+int read_message(char* buff, int size){
+  char c;
+  int pos = 0;
+  while(pos < (size - 1) && !feof(stdin) && (c = getchar())){
+    if(c == '\n' || c == '\0'){
+      break;
+    }
+    buff[pos] = c;
+    pos++;
+  }
+  buff[pos] = '\n';
+  pos++;
+  return pos;
+}
+
+void terminate_command_string(char* command){
+  int command_end = (int)(strchr(command, '\n') - command);
+  command[command_end] = '\0';
+}

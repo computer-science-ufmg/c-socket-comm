@@ -5,7 +5,9 @@ int main(int argc, char const* argv[]) {
   addr_type_t addr_type;
   sockaddr_in_t addr_in;
   socklen_t addr_len = sizeof(addr_in);
-  int port, domain;
+  char command[BUFFSIZE];
+  size_t buffsize = BUFFSIZE;
+  int port, domain, command_end;
 
   if (argc < 3) {
     fprintf(stderr, "Usage: %s <addr_type> <port>\n", argv[0]);
@@ -41,6 +43,13 @@ int main(int argc, char const* argv[]) {
   }
 
   printf("Connected\n");
+  while(strncmp(command, "kill", 5) != 0){
+    read(clientfd, command, buffsize);
+    terminate_command_string(command);
+    printf("%s\n", command);
+  }
+
+  close(clientfd);
 
   return 0;
 }
