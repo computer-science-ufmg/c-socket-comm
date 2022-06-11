@@ -35,6 +35,7 @@ int get_port(char const* port) {
 int read_message(char* buff, int size) {
   char c;
   int pos = 0;
+  printf("> ");
   while (pos < (size - 1) && !feof(stdin) && (c = getchar())) {
     if (c == '\n' || c == '\0') {
       break;

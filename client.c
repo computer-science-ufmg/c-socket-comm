@@ -5,7 +5,7 @@ int main(int argc, char const* argv[]) {
   sockaddr_in_t serv_addr;
   addr_type_t addr_type;
   socklen_t addr_len = sizeof(serv_addr);
-  char command[BUFFSIZE], res[BUFFSIZE];
+  char req[BUFFSIZE], res[BUFFSIZE];
   char const* host;
   size_t buffsize = BUFFSIZE;
   int port, domain;
@@ -36,17 +36,17 @@ int main(int argc, char const* argv[]) {
     return -1;
   }
 
-  while (!feof(stdin) && strncmp(command, "kill", 5)) {
-    int size = read_message(command, buffsize);
+  while (!feof(stdin) && strncmp(req, "kill", 5)) {
+    int size = read_message(req, buffsize);
 
     if (size > 1) {
-      send(serverfd, command, buffsize, 0);
-      terminate_command_string(command);
+      send(serverfd, req, buffsize, 0);
+      terminate_command_string(req);
 
       read(serverfd, res, buffsize);
       terminate_command_string(res);
       if (strlen(res) > 1) {
-        printf("%s\n", res);
+        printf("< %s\n", res);
       }
     }
   }

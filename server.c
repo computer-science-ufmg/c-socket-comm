@@ -24,24 +24,40 @@ void free_regex() {
   regfree(&read_sensors_pattern);
 }
 
-int run_command(char command[500], char response[500]) {
-  if (regexec(&add_sensors_pattern, command, 0, NULL, 0) == 0) {
-    strcpy(response, "Add sensor");
+void add_sensor(char* req, char* res) {
+  strcpy(res, "Add sensor");
+}
+
+void list_sensor(char* req, char* res) {
+  strcpy(res, "List sensor");
+}
+
+void remove_sensor(char* req, char* res) {
+  strcpy(res, "Remove sensor");
+}
+
+void read_sensor(char* req, char* res) {
+  strcpy(res, "Read sensor");
+}
+
+int run_command(char req[500], char res[500]) {
+  if (regexec(&add_sensors_pattern, req, 0, NULL, 0) == 0) {
+    add_sensor(req, res);
   }
-  else if (regexec(&list_sensors_pattern, command, 0, NULL, 0) == 0) {
-    strcpy(response, "List sensor");
+  else if (regexec(&list_sensors_pattern, req, 0, NULL, 0) == 0) {
+    list_sensor(req, res);
   }
-  else if (regexec(&remove_sensors_pattern, command, 0, NULL, 0) == 0) {
-    strcpy(response, "Remove sensor");
+  else if (regexec(&remove_sensors_pattern, req, 0, NULL, 0) == 0) {
+    remove_sensor(req, res);
   }
-  else if (regexec(&read_sensors_pattern, command, 0, NULL, 0) == 0) {
-    strcpy(response, "Read sensor");
+  else if (regexec(&read_sensors_pattern, req, 0, NULL, 0) == 0) {
+    read_sensor(req, res);
   }
   else {
-    strcpy(response, "");
+    strcpy(res, "");
   }
-  int size = strlen(response);
-  format_command_string(response);
+  int size = strlen(res);
+  format_command_string(res);
   return size;
 }
 
@@ -50,7 +66,7 @@ int main(int argc, char const* argv[]) {
   addr_type_t addr_type;
   sockaddr_in_t addr_in;
   socklen_t addr_len = sizeof(addr_in);
-  char command[BUFFSIZE], res[BUFFSIZE];
+  char req[BUFFSIZE], res[BUFFSIZE];
   size_t buffsize = BUFFSIZE;
   int port, domain, size;
 
@@ -90,11 +106,11 @@ int main(int argc, char const* argv[]) {
   }
 
   printf("Connected\n");
-  while (strncmp(command, "kill", 5) != 0) {
-    read(clientfd, command, buffsize);
-    terminate_command_string(command);
+  while (strncmp(req, "kill", 5) != 0) {
+    read(clientfd, req, buffsize);
+    terminate_command_string(req);
 
-    size = run_command(command, res);
+    size = run_command(req, res);
     send(clientfd, res, buffsize, 0);
   }
 
