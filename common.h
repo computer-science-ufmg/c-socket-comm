@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <regex.h>
+#include <arpa/inet.h>
 
 #define PORT 51511
 #define BUFFSIZE 500

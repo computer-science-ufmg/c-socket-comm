@@ -5,12 +5,11 @@ SERVER_TARGET_NAME=./server
 CLIENT_TARGET_NAME=./client
 BUILD_PATH=./build
 
-
 all: $(SERVER_TARGET_NAME) $(CLIENT_TARGET_NAME)
 
 $(BUILD_PATH)/%.o: %.c %.h
 	dirname $@ | xargs mkdir -p
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) $< -o $@
 
 $(SERVER_TARGET_NAME): ./server.c $(BUILD_PATH)/common.o
 	$(CC) ./server.c $(BUILD_PATH)/common.o -o $(SERVER_TARGET_NAME)

@@ -5,7 +5,7 @@ int main(int argc, char const* argv[]) {
   sockaddr_in_t serv_addr;
   addr_type_t addr_type;
   socklen_t addr_len = sizeof(serv_addr);
-  char command[BUFFSIZE], response[BUFFSIZE];
+  char command[BUFFSIZE], res[BUFFSIZE];
   char const* host;
   size_t buffsize = BUFFSIZE;
   int port, domain;
@@ -27,12 +27,7 @@ int main(int argc, char const* argv[]) {
   }
 
   serv_addr.sin_family = domain;
-  if (addr_type == ADDR_TYPE_IPV4) {
-    serv_addr.sin_addr.s_addr = inet_addr(host);
-  }
-  else {
-    serv_addr.sin_addr.s_addr = in6_addr(host);
-  }
+  serv_addr.sin_addr.s_addr = inet_addr(host);
   serv_addr.sin_port = htons(port);
 
   if ((sockfd = connect(serverfd, (sockaddr_t*)&serv_addr, addr_len)) < 0) {
@@ -47,11 +42,10 @@ int main(int argc, char const* argv[]) {
     if (size > 1) {
       send(serverfd, command, size, 0);
       terminate_command_string(command);
-      // printf("%s\n", command);
 
-      // read(serverfd, response, buffsize);
-      // terminate_command_string(command);
-      // printf("%s\n", response);
+      read(serverfd, res, buffsize);
+      terminate_command_string(res);
+      printf("%s\n", res);
     }
   }
 

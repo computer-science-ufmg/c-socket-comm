@@ -1,7 +1,12 @@
 #include"common.h"
 
+#define ADD_SENSORS_PATTERN "add sensor (0[1-4] )+in 0[1-4]"
+#define LIST_SENSORS_PATTERN "list sensors in 0[1-4]"
+#define REMOVE_SENSORS_PATTERN "remove sensor (0[1-4] )+in 0[1-4]"
+#define READ_SENSORS_PATTERN "read (0[1-4] )+in 0[1-4]"
+
 int run_command(char command[500], char response[500]) {
-  strcpy("Vamo galo", response);
+  strcpy(response, "Vamo galo");
   int size = strlen(response);
   format_command_string(response);
   return size;
@@ -53,10 +58,9 @@ int main(int argc, char const* argv[]) {
   while (strncmp(command, "kill", 5) != 0) {
     read(clientfd, command, buffsize);
     terminate_command_string(command);
-    printf("%s\n", command);
 
-    // size = run_command(command, res);
-    // send(clientfd, res, size, 0);
+    size = run_command(command, res);
+    send(clientfd, res, size, 0);
   }
 
   close(clientfd);

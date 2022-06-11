@@ -48,8 +48,10 @@ int read_message(char* buff, int size) {
 }
 
 void terminate_command_string(char* command) {
-  int command_end = (int)(strchr(command, '\n') - command);
-  command[command_end] = '\0';
+  char* char_pos = strchr(command, '\n');
+  if (char_pos) {
+    *char_pos = '\0';
+  }
 }
 
 void format_command_string(char* command) {
