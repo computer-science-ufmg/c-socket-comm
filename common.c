@@ -37,3 +37,8 @@ void terminate_command_string(char* command){
   int command_end = (int)(strchr(command, '\n') - command);
   command[command_end] = '\0';
 }
+
+void format_command_string(char* command){
+  int command_end = (int)(strchr(command, '\0') - command);
+  command[command_end] = '\n';
+}

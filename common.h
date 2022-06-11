@@ -23,3 +23,4 @@ addr_type_t get_addr_type(char const* name);
 int get_port(char const* port);
 int read_message(char* buff, int size);
 void terminate_command_string(char* command);
+void format_command_string(char* command);

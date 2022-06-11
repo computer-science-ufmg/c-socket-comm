@@ -1,13 +1,20 @@
 #include"common.h"
 
+int run_command(char command[500], char response[500]) {
+  strcpy("Vamo galo", response);
+  int size = strlen(response);
+  format_command_string(response);
+  return size;
+}
+
 int main(int argc, char const* argv[]) {
   socket_t sockfd, clientfd;
   addr_type_t addr_type;
   sockaddr_in_t addr_in;
   socklen_t addr_len = sizeof(addr_in);
-  char command[BUFFSIZE];
+  char command[BUFFSIZE], res[BUFFSIZE];
   size_t buffsize = BUFFSIZE;
-  int port, domain, command_end;
+  int port, domain, size;
 
   if (argc < 3) {
     fprintf(stderr, "Usage: %s <addr_type> <port>\n", argv[0]);
@@ -43,13 +50,17 @@ int main(int argc, char const* argv[]) {
   }
 
   printf("Connected\n");
-  while(strncmp(command, "kill", 5) != 0){
+  while (strncmp(command, "kill", 5) != 0) {
     read(clientfd, command, buffsize);
     terminate_command_string(command);
     printf("%s\n", command);
+
+    // size = run_command(command, response);
+    // send(clientfd, res, size, 0);
   }
 
   close(clientfd);
+  close(sockfd);
 
   return 0;
 }
