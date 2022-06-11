@@ -55,7 +55,7 @@ int main(int argc, char const* argv[]) {
     terminate_command_string(command);
     printf("%s\n", command);
 
-    // size = run_command(command, response);
+    // size = run_command(command, res);
     // send(clientfd, res, size, 0);
   }
 

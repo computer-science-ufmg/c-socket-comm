@@ -16,6 +16,7 @@ int main(int argc, char const* argv[]) {
   }
 
   host = argv[1];
+  addr_type = match_addr_type(host);
   port = get_port(argv[2]);
 
   domain = AF_INET;
@@ -26,7 +27,12 @@ int main(int argc, char const* argv[]) {
   }
 
   serv_addr.sin_family = domain;
-  serv_addr.sin_addr.s_addr = inet_addr(host);
+  if (addr_type == ADDR_TYPE_IPV4) {
+    serv_addr.sin_addr.s_addr = inet_addr(host);
+  }
+  else {
+    serv_addr.sin_addr.s_addr = in6_addr(host);
+  }
   serv_addr.sin_port = htons(port);
 
   if ((sockfd = connect(serverfd, (sockaddr_t*)&serv_addr, addr_len)) < 0) {

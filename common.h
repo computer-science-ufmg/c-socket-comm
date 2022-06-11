@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <regex.h>
 
 #define PORT 51511
 #define BUFFSIZE 500
@@ -20,6 +21,7 @@ typedef int socket_t;
 #define DEFAULT_ADDR_TYPE ADDR_TYPE_IPV4
 
 addr_type_t get_addr_type(char const* name);
+addr_type_t match_addr_type(char const* addr);
 int get_port(char const* port);
 int read_message(char* buff, int size);
 void terminate_command_string(char* command);
