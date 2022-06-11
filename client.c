@@ -40,12 +40,14 @@ int main(int argc, char const* argv[]) {
     int size = read_message(command, buffsize);
 
     if (size > 1) {
-      send(serverfd, command, size, 0);
+      send(serverfd, command, buffsize, 0);
       terminate_command_string(command);
 
       read(serverfd, res, buffsize);
       terminate_command_string(res);
-      printf("%s\n", res);
+      if (strlen(res) > 1) {
+        printf("%s\n", res);
+      }
     }
   }
 

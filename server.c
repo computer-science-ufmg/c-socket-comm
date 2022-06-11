@@ -5,8 +5,41 @@
 #define REMOVE_SENSORS_PATTERN "remove sensor (0[1-4] )+in 0[1-4]"
 #define READ_SENSORS_PATTERN "read (0[1-4] )+in 0[1-4]"
 
+regex_t add_sensors_pattern;
+regex_t list_sensors_pattern;
+regex_t remove_sensors_pattern;
+regex_t read_sensors_pattern;
+
+void init_regex() {
+  regcomp(&add_sensors_pattern, ADD_SENSORS_PATTERN, REG_EXTENDED);
+  regcomp(&list_sensors_pattern, LIST_SENSORS_PATTERN, REG_EXTENDED);
+  regcomp(&remove_sensors_pattern, REMOVE_SENSORS_PATTERN, REG_EXTENDED);
+  regcomp(&read_sensors_pattern, READ_SENSORS_PATTERN, REG_EXTENDED);
+}
+
+void free_regex() {
+  regfree(&add_sensors_pattern);
+  regfree(&list_sensors_pattern);
+  regfree(&remove_sensors_pattern);
+  regfree(&read_sensors_pattern);
+}
+
 int run_command(char command[500], char response[500]) {
-  strcpy(response, "Vamo galo");
+  if (regexec(&add_sensors_pattern, command, 0, NULL, 0) == 0) {
+    strcpy(response, "Add sensor");
+  }
+  else if (regexec(&list_sensors_pattern, command, 0, NULL, 0) == 0) {
+    strcpy(response, "List sensor");
+  }
+  else if (regexec(&remove_sensors_pattern, command, 0, NULL, 0) == 0) {
+    strcpy(response, "Remove sensor");
+  }
+  else if (regexec(&read_sensors_pattern, command, 0, NULL, 0) == 0) {
+    strcpy(response, "Read sensor");
+  }
+  else {
+    strcpy(response, "");
+  }
   int size = strlen(response);
   format_command_string(response);
   return size;
@@ -25,6 +58,8 @@ int main(int argc, char const* argv[]) {
     fprintf(stderr, "Usage: %s <addr_type> <port>\n", argv[0]);
     return 1;
   }
+
+  init_regex();
 
   addr_type = get_addr_type(argv[1]);
   port = get_port(argv[2]);
@@ -60,7 +95,7 @@ int main(int argc, char const* argv[]) {
     terminate_command_string(command);
 
     size = run_command(command, res);
-    send(clientfd, res, size, 0);
+    send(clientfd, res, buffsize, 0);
   }
 
   close(clientfd);
