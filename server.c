@@ -1,9 +1,22 @@
 #include"common.h"
 
-#define ADD_SENSORS_PATTERN "add sensor (0[1-4] )+in 0[1-4]"
-#define LIST_SENSORS_PATTERN "list sensors in 0[1-4]"
-#define REMOVE_SENSORS_PATTERN "remove sensor (0[1-4] )+in 0[1-4]"
-#define READ_SENSORS_PATTERN "read (0[1-4] )+in 0[1-4]"
+#define ADD_SENSORS_PATTERN "add sensor ((0[1-4] )+)in (0[1-4])"
+#define LIST_SENSORS_PATTERN "list sensors in (0[1-4])"
+#define REMOVE_SENSORS_PATTERN "remove sensor (0[1-4] )+in (0[1-4])"
+#define READ_SENSORS_PATTERN "read (0[1-4] )+in (0[1-4])"
+
+#define MAX_GROUPS 32
+
+typedef struct args_t {
+  char* argv[MAX_GROUPS];
+  int argc;
+} args_t;
+
+typedef struct add_sensor_args_t {
+  int device;
+  int sensor_count;
+  int* sensors;
+} add_sensor_args_t;
 
 regex_t add_sensors_pattern;
 regex_t list_sensors_pattern;
@@ -24,7 +37,62 @@ void free_regex() {
   regfree(&read_sensors_pattern);
 }
 
-void add_sensor(char* req, char* res) {
+args_t* new_args() {
+  args_t* args;
+  args = (args_t*)malloc(sizeof(args_t));
+  args->argc = 0;
+  return args;
+}
+
+add_sensor_args_t* new_add_sensor_args(int sensor_count) {
+  add_sensor_args_t* args;
+  args = (add_sensor_args_t*)malloc(sizeof(add_sensor_args_t));
+  args->sensor_count = sensor_count;
+  args->sensors = (int*)malloc(sensor_count * sizeof(int));
+  return args;
+}
+
+args_t* parse_regex_args(regex_t* pattern, char* req) {
+  char req_copy[strlen(req) + 1];
+  args_t* args = new_args();
+  regmatch_t group_array[MAX_GROUPS];
+
+  strcpy(req_copy, req);
+  if (regexec(pattern, req, MAX_GROUPS, group_array, 0) == 0) {
+    for (unsigned i = 0; i < MAX_GROUPS; i++) {
+      if (group_array[i].rm_so == (size_t)-1) {
+        break;
+      }
+
+      args->argv[i] = (req_copy + group_array[i].rm_so);
+      args->argc++;
+    }
+  }
+
+  printf("argc: %d\n", args->argc);
+
+  return args;
+}
+
+add_sensor_args_t* parse_add_sensor(char* req) {
+  args_t* args = parse_regex_args(&add_sensors_pattern, req);
+  char* sensors_str = args->argv[1];
+  int sensor_count = ((strlen(sensors_str) + 1) / 3) - 2;
+
+  add_sensor_args_t* add_args = new_add_sensor_args(sensor_count);
+
+  for (unsigned i = 0; i < (strlen(sensors_str) - 5); i += 3) {
+    add_args->sensors[(int)i / 3] = sensors_str[i + 1] - '0';
+  }
+  add_args->device = atoi(args->argv[args->argc - 1]);
+
+  printf("sensors: %d\n", add_args->sensor_count);
+  printf("device: %d\n", add_args->device);
+  free(args);
+  return add_args;
+}
+
+void add_sensor(add_sensor_args_t* args, char* res) {
   strcpy(res, "Add sensor");
 }
 
@@ -42,7 +110,10 @@ void read_sensor(char* req, char* res) {
 
 int run_command(char req[500], char res[500]) {
   if (regexec(&add_sensors_pattern, req, 0, NULL, 0) == 0) {
-    add_sensor(req, res);
+    add_sensor_args_t* args = parse_add_sensor(req);
+    add_sensor(args, res);
+    free(args->sensors);
+    free(args);
   }
   else if (regexec(&list_sensors_pattern, req, 0, NULL, 0) == 0) {
     list_sensor(req, res);

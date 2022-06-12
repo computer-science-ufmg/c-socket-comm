@@ -11,7 +11,7 @@ int main(int argc, char const* argv[]) {
   int port, domain;
 
   if (argc < 3) {
-    fprintf(stderr, "Usage: %s <addr_type> <port>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <host> <port>\n", argv[0]);
     return 1;
   }
 
@@ -32,7 +32,7 @@ int main(int argc, char const* argv[]) {
 
   if ((sockfd = connect(serverfd, (sockaddr_t*)&serv_addr, addr_len)) < 0) {
     close(serverfd);
-    printf("\nConnection Failed \n");
+    printf("Connection Failed\n");
     return -1;
   }
 
