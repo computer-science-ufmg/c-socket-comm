@@ -21,7 +21,6 @@ int main(int argc, char const* argv[]) {
   addr_type = match_addr_type(host);
   port = get_port(argv[2]);
 
-  printf("Using %s\n", addr_type == ADDR_TYPE_IPV4 ? "IPv4" : "IPv6");
   if (addr_type == ADDR_TYPE_IPV4) {
     domain = AF_INET;
     serv_addr4.sin_family = domain;
