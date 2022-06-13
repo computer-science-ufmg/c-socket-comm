@@ -410,6 +410,8 @@ int main(int argc, char const* argv[]) {
     exit(4);
   }
 
+  printf("Awainting connection...\n");
+
   if ((clientfd = accept(sockfd, addr, &addr_len)) < 0) {
     perror("accept");
     exit(5);
@@ -418,7 +420,7 @@ int main(int argc, char const* argv[]) {
   printf("Connected\n");
   while (strncmp(req, "kill", 5) != 0) {
     if (read(clientfd, req, buffsize) == 0b00000000) {
-      printf("Client disconnected, awaiting connection...\n");
+      printf("\nClient disconnected, awaiting connection...\n");
       close(clientfd);
       if ((clientfd = accept(sockfd, (sockaddr_t*)&addr_in, &addr_len)) < 0) {
         perror("accept");

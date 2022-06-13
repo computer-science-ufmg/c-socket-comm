@@ -12,7 +12,7 @@ addr_type_t get_addr_type(char const* name) {
 
 addr_type_t match_addr_type(char const* addr) {
   regex_t ipv4_pattern;
-  if (regcomp(&ipv4_pattern, "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}", 0) != 0) {
+  if (regcomp(&ipv4_pattern, "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}", REG_EXTENDED) != 0) {
     return ADDR_TYPE_IPV4;
   }
 
