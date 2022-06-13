@@ -29,6 +29,10 @@ typedef struct add_sensor_args_t {
   sensor_t* sensors;
 } add_sensor_args_t;
 
+typedef struct list_sensor_args_t {
+  device_t device;
+} list_sensor_args_t;
+
 regex_t add_sensors_pattern;
 regex_t list_sensors_pattern;
 regex_t remove_sensors_pattern;
@@ -74,6 +78,12 @@ add_sensor_args_t* new_add_sensor_args(int sensor_count) {
   return args;
 }
 
+list_sensor_args_t* new_list_sensor_args() {
+  list_sensor_args_t* args;
+  args = (list_sensor_args_t*)malloc(sizeof(list_sensor_args_t));
+  return args;
+}
+
 int count_sensors() {
   int count = 0;
   for (device_t device = 0; device < DEVICES_NUM; device++) {
@@ -106,6 +116,11 @@ args_t* parse_regex_args(regex_t* pattern, char* req) {
   }
 
   printf("argc: %d\n", args->argc);
+  printf("argv: ");
+  for (int i = 0; i < args->argc; i++) {
+    printf("%s, ", args->argv[i]);
+  }
+  printf("\b\b\n");
 
   return args;
 }
@@ -126,6 +141,17 @@ add_sensor_args_t* parse_add_sensor(char* req) {
   printf("device: %d\n", add_args->device);
   free(args);
   return add_args;
+}
+
+list_sensor_args_t* parse_list_sensor(char* req) {
+  args_t* args = parse_regex_args(&list_sensors_pattern, req);
+
+  list_sensor_args_t* list_args = new_list_sensor_args();
+  list_args->device = atoi(args->argv[args->argc - 1]);
+
+  printf("device: %d\n", list_args->device);
+  free(args);
+  return list_args;
 }
 
 //=================== Commands ===================//
@@ -163,8 +189,16 @@ void add_sensor(add_sensor_args_t* args, char* res) {
   strcat(res, "added");
 }
 
-void list_sensor(char* req, char* res) {
-  strcpy(res, "List sensor");
+void list_sensor(list_sensor_args_t* args, char* res) {
+  int count = 0;
+
+  strcpy(res, "");
+  for (sensor_t sensor = 0; sensor < SENSORS_NUM; sensor++) {
+    if (devices[args->device - 1][sensor - 1] == 1) {
+      sprintf(res, "%s%s0%d", res, count == 0 ? "" : " ", sensor);
+      count++;
+    }
+  }
 }
 
 void remove_sensor(char* req, char* res) {
@@ -183,7 +217,9 @@ int run_command(char req[500], char res[500]) {
     free(args);
   }
   else if (regexec(&list_sensors_pattern, req, 0, NULL, 0) == 0) {
-    list_sensor(req, res);
+    list_sensor_args_t* args = parse_list_sensor(req);
+    list_sensor(args, res);
+    free(args);
   }
   else if (regexec(&remove_sensors_pattern, req, 0, NULL, 0) == 0) {
     remove_sensor(req, res);
@@ -195,6 +231,7 @@ int run_command(char req[500], char res[500]) {
     strcpy(res, "");
   }
   int size = strlen(res);
+  printf("response: %s\n", res);
   format_command_string(res);
   return size;
 }
