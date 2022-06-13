@@ -16,6 +16,7 @@ typedef enum addr_type {
 } addr_type_t;
 
 typedef struct sockaddr_in sockaddr_in_t;
+typedef struct sockaddr_in6 sockaddr_in6_t;
 typedef struct sockaddr sockaddr_t;
 typedef int socket_t;
 

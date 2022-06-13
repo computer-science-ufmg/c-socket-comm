@@ -51,7 +51,6 @@ int main(int argc, char const* argv[]) {
     }
   }
 
-  close(serverfd);
   close(sockfd);
 
   return 0;

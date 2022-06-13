@@ -351,8 +351,10 @@ int run_command(char req[500], char res[500]) {
 int main(int argc, char const* argv[]) {
   socket_t sockfd, clientfd;
   addr_type_t addr_type;
+  sockaddr_t* addr;
   sockaddr_in_t addr_in;
-  socklen_t addr_len = sizeof(addr_in);
+  sockaddr_in6_t addr6_in;
+  socklen_t addr_len;
   char req[BUFFSIZE], res[BUFFSIZE];
   size_t buffsize = BUFFSIZE;
   int port, domain, size, option = 1;
@@ -369,7 +371,22 @@ int main(int argc, char const* argv[]) {
   addr_type = get_addr_type(argv[1]);
   port = get_port(argv[2]);
 
-  domain = addr_type == ADDR_TYPE_IPV4 ? AF_INET : AF_INET6;
+  if (addr_type == ADDR_TYPE_IPV4) {
+    domain = AF_INET;
+    addr_in.sin_family = domain;
+    addr_in.sin_addr.s_addr = INADDR_ANY;
+    addr_in.sin_port = htons(port);
+    addr_len = sizeof(addr_in);
+  }
+  else {
+    domain = AF_INET6;
+    addr6_in.sin6_family = domain;
+    inet_pton(AF_INET6, "::1", &addr6_in.sin6_addr);
+    addr6_in.sin6_port = htons(port);
+    addr_len = sizeof(addr6_in);
+  }
+
+  printf("Using %s\n", addr_type == ADDR_TYPE_IPV4 ? "IPv4" : "IPv6");
 
   if ((sockfd = socket(domain, SOCK_STREAM, 0)) == 0) {
     perror("socket");
@@ -381,11 +398,9 @@ int main(int argc, char const* argv[]) {
     exit(2);
   }
 
-  addr_in.sin_family = domain;
-  addr_in.sin_addr.s_addr = INADDR_ANY;
-  addr_in.sin_port = htons(port);
+  addr = addr_type == ADDR_TYPE_IPV4 ? (sockaddr_t*)&addr_in : (sockaddr_t*)&addr6_in;
 
-  if (bind(sockfd, (sockaddr_t*)&addr_in, addr_len) < 0) {
+  if (bind(sockfd, addr, addr_len) < 0) {
     perror("bind");
     exit(3);
   }
@@ -395,7 +410,7 @@ int main(int argc, char const* argv[]) {
     exit(4);
   }
 
-  if ((clientfd = accept(sockfd, (sockaddr_t*)&addr_in, &addr_len)) < 0) {
+  if ((clientfd = accept(sockfd, addr, &addr_len)) < 0) {
     perror("accept");
     exit(5);
   }
@@ -419,7 +434,7 @@ int main(int argc, char const* argv[]) {
   }
 
   close(clientfd);
-  close(sockfd);
+  shutdown(sockfd, SHUT_RDWR);
 
   return 0;
 }
