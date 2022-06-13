@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra
+CFLAGS=-Wno-format-overflow
 
 SERVER_TARGET_NAME=./server
 CLIENT_TARGET_NAME=./client
@@ -12,10 +12,10 @@ $(BUILD_PATH)/%.o: %.c %.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(SERVER_TARGET_NAME): ./server.c $(BUILD_PATH)/common.o
-	$(CC) ./server.c $(BUILD_PATH)/common.o -o $(SERVER_TARGET_NAME)
+	$(CC) $(CFLAGS) ./server.c $(BUILD_PATH)/common.o -o $(SERVER_TARGET_NAME)
 
 $(CLIENT_TARGET_NAME): ./client.c $(BUILD_PATH)/common.o
-	$(CC) ./client.c $(BUILD_PATH)/common.o -o $(CLIENT_TARGET_NAME)
+	$(CC) $(CFLAGS) ./client.c $(BUILD_PATH)/common.o -o $(CLIENT_TARGET_NAME)
 
 clean:
 	rm -rf $(BUILD_PATH)/*

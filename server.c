@@ -1,3 +1,5 @@
+#include<time.h>
+
 #include"common.h"
 
 #define DEVICES_NUM 4
@@ -5,8 +7,8 @@
 
 #define ADD_SENSORS_PATTERN "add sensor ((0[1-4] )+)in (0[1-4])"
 #define LIST_SENSORS_PATTERN "list sensors in (0[1-4])"
-#define REMOVE_SENSORS_PATTERN "remove sensor (0[1-4] )+in (0[1-4])"
-#define READ_SENSORS_PATTERN "read (0[1-4] )+in (0[1-4])"
+#define REMOVE_SENSORS_PATTERN "remove sensor ((0[1-4] )+)in (0[1-4])"
+#define READ_SENSORS_PATTERN "read ((0[1-4] )+)in (0[1-4])"
 
 #define MAX_GROUPS 32
 
@@ -32,6 +34,18 @@ typedef struct add_sensor_args_t {
 typedef struct list_sensor_args_t {
   device_t device;
 } list_sensor_args_t;
+
+typedef struct remove_sensor_args_t {
+  int sensor_count;
+  device_t device;
+  sensor_t* sensors;
+} remove_sensor_args_t;
+
+typedef struct read_sensor_args_t {
+  int sensor_count;
+  device_t device;
+  sensor_t* sensors;
+} read_sensor_args_t;
 
 regex_t add_sensors_pattern;
 regex_t list_sensors_pattern;
@@ -84,6 +98,22 @@ list_sensor_args_t* new_list_sensor_args() {
   return args;
 }
 
+remove_sensor_args_t* new_remove_sensor_args(int sensor_count) {
+  remove_sensor_args_t* args = (remove_sensor_args_t*)malloc(sizeof(remove_sensor_args_t));
+  args->sensor_count = sensor_count;
+  args->sensors = (sensor_t*)malloc(args->sensor_count * sizeof(sensor_t));
+  args->device = 0;
+  return args;
+}
+
+read_sensor_args_t* new_read_sensor_args(int sensor_count) {
+  read_sensor_args_t* args = (read_sensor_args_t*)malloc(sizeof(read_sensor_args_t));
+  args->sensor_count = sensor_count;
+  args->sensors = (sensor_t*)malloc(args->sensor_count * sizeof(sensor_t));
+  args->device = 0;
+  return args;
+}
+
 int count_sensors() {
   int count = 0;
   for (device_t device = 0; device < DEVICES_NUM; device++) {
@@ -94,6 +124,12 @@ int count_sensors() {
     }
   }
   return count;
+}
+
+float get_random_number(int max) {
+  int d = rand();
+  float r = (float)d / (float)RAND_MAX;
+  return max * r;
 }
 
 //=================== Parsers ===================//
@@ -154,23 +190,56 @@ list_sensor_args_t* parse_list_sensor(char* req) {
   return list_args;
 }
 
+remove_sensor_args_t* parse_remove_sensor(char* req) {
+  args_t* args = parse_regex_args(&remove_sensors_pattern, req);
+
+  char* sensors_str = args->argv[1];
+  int sensor_count = ((strlen(sensors_str) + 1) / 3) - 2;
+
+  remove_sensor_args_t* remove_args = new_remove_sensor_args(sensor_count);
+
+  for (unsigned i = 0; i < (strlen(sensors_str) - 5); i += 3) {
+    remove_args->sensors[(int)i / 3] = sensors_str[i + 1] - '0';
+  }
+  remove_args->device = atoi(args->argv[args->argc - 1]);
+
+  printf("sensors: %d\n", remove_args->sensor_count);
+  printf("device: %d\n", remove_args->device);
+  free(args);
+  return remove_args;
+}
+
+read_sensor_args_t* parse_read_sensor(char* req) {
+  args_t* args = parse_regex_args(&read_sensors_pattern, req);
+
+  char* sensors_str = args->argv[1];
+  int sensor_count = ((strlen(sensors_str) + 1) / 3) - 2;
+
+  read_sensor_args_t* read_args = new_read_sensor_args(sensor_count);
+
+  for (unsigned i = 0; i < (strlen(sensors_str) - 5); i += 3) {
+    read_args->sensors[(int)i / 3] = sensors_str[i + 1] - '0';
+  }
+  read_args->device = atoi(args->argv[args->argc - 1]);
+
+  printf("sensors: %d\n", read_args->sensor_count);
+  printf("device: %d\n", read_args->device);
+  free(args);
+  return read_args;
+}
+
 //=================== Commands ===================//
 
 void add_sensor(add_sensor_args_t* args, char* res) {
-  char sensor_name[4];
-  char error[BUFFSIZE] = "sensor ";
+  char error[BUFFSIZE] = "sensor";
 
   for (int i = 0; i < args->sensor_count; i++) {
     if (devices[args->device - 1][args->sensors[i] - 1] == 1) {
-      sprintf(sensor_name, "0%d ", args->sensors[i]);
-      strcat(error, sensor_name);
+      sprintf(error, "%s 0%d", error, args->sensors[i]);
     }
   }
-  if (strlen(error) > 8) {
-    sprintf(sensor_name, "%d", args->device);
-    strcat(error, "already exists in ");
-    strcat(error, sensor_name);
-    strcpy(res, error);
+  if (strlen(error) > strlen("sensor")) {
+    sprintf(res, "%s already existis in 0%d", error, args->device);
     return;
   }
 
@@ -180,13 +249,12 @@ void add_sensor(add_sensor_args_t* args, char* res) {
     return;
   }
 
-  strcpy(res, "sensor ");
+  strcpy(res, "sensor");
   for (int i = 0; i < args->sensor_count; i++) {
     devices[args->device - 1][args->sensors[i] - 1] = 1;
-    sprintf(sensor_name, "0%d ", args->sensors[i]);
-    strcat(res, sensor_name);
+    sprintf(res, "%s 0%d", res, args->sensors[i]);
   }
-  strcat(res, "added");
+  strcat(res, " added");
 }
 
 void list_sensor(list_sensor_args_t* args, char* res) {
@@ -201,15 +269,51 @@ void list_sensor(list_sensor_args_t* args, char* res) {
   }
 }
 
-void remove_sensor(char* req, char* res) {
-  strcpy(res, "Remove sensor");
+void remove_sensor(remove_sensor_args_t* args, char* res) {
+  char error[BUFFSIZE] = "sensor";
+
+  for (int i = 0; i < args->sensor_count; i++) {
+    if (devices[args->device - 1][args->sensors[i] - 1] == 0) {
+      sprintf(error, "%s 0%d", error, args->sensors[i]);
+    }
+  }
+  if (strlen(error) > strlen("sensor")) {
+    sprintf(res, "%s does not exist in 0%d", error, args->device);
+    return;
+  }
+
+  strcpy(res, "sensor");
+  for (int i = 0; i < args->sensor_count; i++) {
+    devices[args->device - 1][args->sensors[i] - 1] = 0;
+    sprintf(res, "%s 0%d", res, args->sensors[i]);
+  }
+  strcat(res, " removed");
 }
 
-void read_sensor(char* req, char* res) {
-  strcpy(res, "Read sensor");
+void read_sensor(read_sensor_args_t* args, char* res) {
+  char error[BUFFSIZE] = "sensor(s)";
+  int count = 0;
+
+  for (int i = 0; i < args->sensor_count; i++) {
+    if (devices[args->device - 1][args->sensors[i] - 1] == 0) {
+      sprintf(error, "%s 0%d", error, args->sensors[i]);
+    }
+  }
+  if (strlen(error) > strlen("sensor(s)")) {
+    sprintf(res, "%s not installed", error);
+    return;
+  }
+
+  strcpy(res, "");
+  for (int i = 0; i < args->sensor_count; i++) {
+    float value = get_random_number(10);
+    sprintf(res, "%s%s%.2f", res, count == 0 ? "" : " ", value);
+    count++;
+  }
 }
 
 int run_command(char req[500], char res[500]) {
+  printf("\nReceived: %s\n", req);
   if (regexec(&add_sensors_pattern, req, 0, NULL, 0) == 0) {
     add_sensor_args_t* args = parse_add_sensor(req);
     add_sensor(args, res);
@@ -222,16 +326,22 @@ int run_command(char req[500], char res[500]) {
     free(args);
   }
   else if (regexec(&remove_sensors_pattern, req, 0, NULL, 0) == 0) {
-    remove_sensor(req, res);
+    remove_sensor_args_t* args = parse_remove_sensor(req);
+    remove_sensor(args, res);
+    free(args->sensors);
+    free(args);
   }
   else if (regexec(&read_sensors_pattern, req, 0, NULL, 0) == 0) {
-    read_sensor(req, res);
+    read_sensor_args_t* args = parse_read_sensor(req);
+    read_sensor(args, res);
+    free(args->sensors);
+    free(args);
   }
   else {
     strcpy(res, "");
   }
   int size = strlen(res);
-  printf("response: %s\n", res);
+  printf("Response: %s\n", res);
   format_command_string(res);
   return size;
 }
@@ -245,7 +355,9 @@ int main(int argc, char const* argv[]) {
   socklen_t addr_len = sizeof(addr_in);
   char req[BUFFSIZE], res[BUFFSIZE];
   size_t buffsize = BUFFSIZE;
-  int port, domain, size;
+  int port, domain, size, option = 1;
+
+  srand(time(NULL));
 
   if (argc < 3) {
     fprintf(stderr, "Usage: %s <addr_type> <port>\n", argv[0]);
@@ -261,30 +373,45 @@ int main(int argc, char const* argv[]) {
 
   if ((sockfd = socket(domain, SOCK_STREAM, 0)) == 0) {
     perror("socket");
-    return 1;
+    exit(1);
+  }
+
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))) {
+    perror("setsockopt");
+    exit(2);
   }
 
   addr_in.sin_family = domain;
+  addr_in.sin_addr.s_addr = INADDR_ANY;
   addr_in.sin_port = htons(port);
 
   if (bind(sockfd, (sockaddr_t*)&addr_in, addr_len) < 0) {
     perror("bind");
-    return 1;
+    exit(3);
   }
 
   if (listen(sockfd, 3) < 0) {
     perror("listen");
-    exit(1);
+    exit(4);
   }
 
   if ((clientfd = accept(sockfd, (sockaddr_t*)&addr_in, &addr_len)) < 0) {
     perror("accept");
-    exit(1);
+    exit(5);
   }
 
   printf("Connected\n");
   while (strncmp(req, "kill", 5) != 0) {
-    read(clientfd, req, buffsize);
+    if (read(clientfd, req, buffsize) == 0b00000000) {
+      printf("Client disconnected, awaiting connection...\n");
+      close(clientfd);
+      if ((clientfd = accept(sockfd, (sockaddr_t*)&addr_in, &addr_len)) < 0) {
+        perror("accept");
+        exit(5);
+      }
+      printf("Connected\n");
+      continue;
+    }
     terminate_command_string(req);
 
     size = run_command(req, res);
