@@ -1,5 +1,8 @@
 #include"common.h"
 
+#define DEVICES_NUM 4
+#define SENSORS_NUM 4
+
 #define ADD_SENSORS_PATTERN "add sensor ((0[1-4] )+)in (0[1-4])"
 #define LIST_SENSORS_PATTERN "list sensors in (0[1-4])"
 #define REMOVE_SENSORS_PATTERN "remove sensor (0[1-4] )+in (0[1-4])"
@@ -7,15 +10,23 @@
 
 #define MAX_GROUPS 32
 
+//==================== Types ====================//
+
+typedef int devices_t[DEVICES_NUM][SENSORS_NUM];
+typedef int device_t;
+typedef int sensor_t;
+
+devices_t devices;
+
 typedef struct args_t {
   char* argv[MAX_GROUPS];
   int argc;
 } args_t;
 
 typedef struct add_sensor_args_t {
-  int device;
   int sensor_count;
-  int* sensors;
+  device_t device;
+  sensor_t* sensors;
 } add_sensor_args_t;
 
 regex_t add_sensors_pattern;
@@ -23,11 +34,22 @@ regex_t list_sensors_pattern;
 regex_t remove_sensors_pattern;
 regex_t read_sensors_pattern;
 
+
+//==================== Utils ====================//
+
 void init_regex() {
   regcomp(&add_sensors_pattern, ADD_SENSORS_PATTERN, REG_EXTENDED);
   regcomp(&list_sensors_pattern, LIST_SENSORS_PATTERN, REG_EXTENDED);
   regcomp(&remove_sensors_pattern, REMOVE_SENSORS_PATTERN, REG_EXTENDED);
   regcomp(&read_sensors_pattern, READ_SENSORS_PATTERN, REG_EXTENDED);
+}
+
+void init_devices() {
+  for (device_t device = 0; device < DEVICES_NUM; device++) {
+    for (sensor_t sensor = 0; sensor < SENSORS_NUM; sensor++) {
+      devices[device][sensor] = 0;
+    }
+  }
 }
 
 void free_regex() {
@@ -51,6 +73,20 @@ add_sensor_args_t* new_add_sensor_args(int sensor_count) {
   args->sensors = (int*)malloc(sensor_count * sizeof(int));
   return args;
 }
+
+int count_sensors() {
+  int count = 0;
+  for (device_t device = 0; device < DEVICES_NUM; device++) {
+    for (sensor_t sensor = 0; sensor < SENSORS_NUM; sensor++) {
+      if (devices[device][sensor] == 1) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+//=================== Parsers ===================//
 
 args_t* parse_regex_args(regex_t* pattern, char* req) {
   char req_copy[strlen(req) + 1];
@@ -92,8 +128,39 @@ add_sensor_args_t* parse_add_sensor(char* req) {
   return add_args;
 }
 
+//=================== Commands ===================//
+
 void add_sensor(add_sensor_args_t* args, char* res) {
-  strcpy(res, "Add sensor");
+  char sensor_name[4];
+  char error[BUFFSIZE] = "sensor ";
+
+  for (int i = 0; i < args->sensor_count; i++) {
+    if (devices[args->device - 1][args->sensors[i] - 1] == 1) {
+      sprintf(sensor_name, "0%d ", args->sensors[i]);
+      strcat(error, sensor_name);
+    }
+  }
+  if (strlen(error) > 8) {
+    sprintf(sensor_name, "%d", args->device);
+    strcat(error, "already exists in ");
+    strcat(error, sensor_name);
+    strcpy(res, error);
+    return;
+  }
+
+
+  if (count_sensors() + args->sensor_count > 15) {
+    strcpy(res, "limit exceeded");
+    return;
+  }
+
+  strcpy(res, "sensor ");
+  for (int i = 0; i < args->sensor_count; i++) {
+    devices[args->device - 1][args->sensors[i] - 1] = 1;
+    sprintf(sensor_name, "0%d ", args->sensors[i]);
+    strcat(res, sensor_name);
+  }
+  strcat(res, "added");
 }
 
 void list_sensor(char* req, char* res) {
@@ -131,6 +198,8 @@ int run_command(char req[500], char res[500]) {
   format_command_string(res);
   return size;
 }
+
+//==================== Main ====================//
 
 int main(int argc, char const* argv[]) {
   socket_t sockfd, clientfd;
