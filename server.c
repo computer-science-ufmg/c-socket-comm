@@ -381,7 +381,7 @@ int main(int argc, char const* argv[]) {
   else {
     domain = AF_INET6;
     addr6_in.sin6_family = domain;
-    inet_pton(AF_INET6, "::1", &addr6_in.sin6_addr);
+    addr6_in.sin6_addr = in6addr_any;
     addr6_in.sin6_port = htons(port);
     addr_len = sizeof(addr6_in);
   }
